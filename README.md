@@ -42,5 +42,5 @@ ScamGuard is built on a **Stateless Resilience** model, optimized for cloud-nati
 ### Local Development
 1. Clone the repository:
    ```bash
-   git clone [https://github.com/your-username/scamguard-ai.git](https://github.com/your-username/scamguard-ai.git)
+   git clone [https://github.com/youamar/scamguard-ai.git](https://github.com/youamar/scamguard-ai.git)
    cd scamguard-ai
