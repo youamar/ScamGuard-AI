@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
+import path from 'path'; // 🌟 新增：用于解析文件路径
 
 const app = express();
 
@@ -14,6 +15,11 @@ const apiLimiter = rateLimit({
 app.use(cors());
 app.use(express.json());
 app.use('/api/', apiLimiter);
+
+// 🌟 新增：根目录路由，解决 "Cannot GET /" 的致命问题，直接返回你的极简 UI
+app.get('/', (req, res) => {
+    res.sendFile(path.resolve('index.html'));
+});
 
 const TRUSTED_DOMAINS = ["hasil.gov.my", "utm.my", "bnm.gov.my", "mcmc.gov.my"];
 const API_KEY = process.env.GEMINI_API_KEY || "";
@@ -50,12 +56,12 @@ app.post('/api/analyze', async (req, res) => {
         return res.status(403).json({ 
             threatLevel: "Critical", 
             analysis: "SECURITY ALERT: Automated bot traffic detected. Missing or invalid CAPTCHA token.", 
-            extractedEntities: [],
+            extractedEntities: ["None"],
             recommendedAction: "Access Denied." 
         });
     }
 
-    if (!text || text.trim().length < 5) return res.json({ threatLevel: "Low", extractedEntities: [], analysis: "Input too short.", recommendedAction: "Pass." });
+    if (!text || text.trim().length < 5) return res.json({ threatLevel: "Low", extractedEntities: ["None"], analysis: "Input too short.", recommendedAction: "Pass." });
 
     const normalized = normalizeText(text);
     const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+|[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/gi;
@@ -86,11 +92,19 @@ app.post('/api/analyze', async (req, res) => {
     Text: ${text}`;
 
     try {
+        if (!API_KEY) throw new Error("GEMINI_API_KEY is missing in environment variables.");
+
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
         });
+        
+        if (!response.ok) {
+            const errDetails = await response.text();
+            throw new Error(`Google API Rejected: ${response.status} - ${errDetails}`);
+        }
+
         const data = await response.json();
         const cleanStr = data.candidates[0].content.parts[0].text.replace(/```json/g, '').replace(/```/g, '').trim();
         const finalResult = JSON.parse(cleanStr);
@@ -100,9 +114,18 @@ app.post('/api/analyze', async (req, res) => {
         res.json(finalResult);
 
     } catch (error) {
-        res.json({ threatLevel: strictLevel, extractedEntities: rawUrls, analysis: "AI Node offline. Mathematical heuristics applied.", recommendedAction: heuristicScore >= 60 ? "Do not trust this message." : "Stay vigilant." });
+        // 🌟 新增：V9.1 深度容灾日志，确保即使 AI 宕机，控制台也能看到原因
+        console.error("\n⚠️ [SYSTEM ALERT] AI Node connection failed:");
+        console.error(error.message);
+        
+        res.json({ 
+            threatLevel: strictLevel, 
+            extractedEntities: rawUrls.length > 0 ? rawUrls : ["None"], 
+            analysis: "AI Node offline. Mathematical heuristics applied to secure this packet.", 
+            recommendedAction: heuristicScore >= 60 ? "High risk detected. Do not trust this message." : "Maintain standard vigilance." 
+        });
     }
 });
 
 const PORT = parseInt(process.env.PORT) || 8080;
-app.listen(PORT, '0.0.0.0', () => console.log(`🚀 ScamGuard V9 Active on port: ${PORT}`));
+app.listen(PORT, '0.0.0.0', () => console.log(`🚀 ScamGuard V9.1 Final Active on port: ${PORT}`));
