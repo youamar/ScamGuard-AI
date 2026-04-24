@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Citizen Threat Intelligence | ScamGuard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-page: #0f172a; --bg-card: #1e293b; --border-color: #334155;
+            --text-main: #f8fafc; --text-muted: #94a3b8;
+            --accent: #0ea5e9; --accent-hover: #0284c7;
+            --crit: #ef4444; --high: #f97316; --med: #eab308; --low: #10b981;
+        }
+
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-page); color: var(--text-main); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; flex-direction: column;}
+        .container { background-color: var(--bg-card); padding: 40px 30px; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); border: 1px solid var(--border-color); max-width: 600px; width: 100%; position: relative;}
+        
+        /* 身份定位标识 */
+        .gateway-badge { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: var(--accent); color: white; font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 20px; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 10px rgba(14, 165, 233, 0.3);}
+        
+        h1 { color: #38bdf8; text-align: center; margin: 15px 0 8px 0; font-size: 1.6em; }
+        p.subtitle { text-align: center; color: var(--text-muted); font-size: 0.9em; margin: 0 0 25px 0; }
+        
+        textarea { width: 100%; height: 120px; padding: 16px; border-radius: 10px; border: 2px solid var(--border-color); background-color: rgba(15, 23, 42, 0.6); color: var(--text-main); font-size: 1em; resize: none; outline: none; box-sizing: border-box; transition: all 0.3s ease;}
+        textarea:focus { border-color: #38bdf8; background-color: #0f172a;}
+
+        button.primary-btn { width: 100%; padding: 14px; margin-top: 16px; border: none; border-radius: 10px; background-color: var(--accent); color: white; font-size: 1.05em; font-weight: 600; cursor: pointer; transition: all 0.2s;}
+        button.primary-btn:hover:not(:disabled) { background-color: var(--accent-hover); }
+        button.primary-btn:disabled { background-color: var(--border-color); color: var(--text-muted); cursor: not-allowed; }
+        
+        #results { display: none; background-color: rgba(15, 23, 42, 0.8); padding: 24px; border-radius: 12px; margin-top: 24px; border-left: 4px solid var(--border-color); }
+        .badge { display: inline-flex; padding: 6px 12px; border-radius: 6px; font-weight: 700; font-size: 0.85em; margin-bottom: 16px; }
+
+        .level-critical { border-left-color: var(--crit) !important; } .badge-critical { background-color: var(--crit); color: white; }
+        .level-high { border-left-color: var(--high) !important; } .badge-high { background-color: var(--high); color: white; }
+        .level-medium { border-left-color: var(--med) !important; } .badge-medium { background-color: var(--med); color: #0f172a; }
+        .level-low { border-left-color: var(--low) !important; } .badge-low { background-color: var(--low); color: #0f172a; }
+
+        .result-title { color: var(--text-muted); font-size: 0.75em; font-weight: 700; text-transform: uppercase; margin: 16px 0 6px 0;}
+        .result-title:first-of-type { margin-top: 0; }
+        .result-content { font-size: 0.95em; line-height: 1.6; color: #e2e8f0; }
+        .entity-tag { background: #334155; padding: 3px 8px; border-radius: 4px; font-size: 0.9em; margin: 0 4px 4px 0; display: inline-block;}
+
+        /* 安全标识 & 反馈系统 */
+        .security-footer { margin-top: 20px; text-align: center; font-size: 11px; color: var(--text-muted); display: flex; justify-content: center; align-items: center; gap: 6px;}
+        
+        .feedback-section { margin-top: 20px; padding-top: 16px; border-top: 1px dashed var(--border-color); text-align: center;}
+        .feedback-text { font-size: 0.85em; color: var(--text-muted); margin-bottom: 10px;}
+        .feedback-btn { background: transparent; border: 1px solid var(--border-color); color: var(--text-muted); padding: 6px 12px; border-radius: 4px; font-size: 0.8em; cursor: pointer; transition: 0.2s; font-family: inherit;}
+        .feedback-btn:hover { background: rgba(239, 68, 68, 0.1); color: var(--crit); border-color: var(--crit);}
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="gateway-badge">ScamGuard Citizen Portal</div>
+    <h1>🔍 Threat Intelligence Probe</h1>
+    <p class="subtitle">Empowering citizens to scan and report digital threats.</p>
+    
+    <textarea id="scamInput" placeholder="Paste suspicious SMS, email, or URL here..."></textarea>
+    
+    <button id="analyzeBtn" class="primary-btn" onclick="analyzeText()">
+        <span id="btnText">Initiate Secure Scan</span>
+    </button>
+
+    <div id="results">
+        <div class="badge" id="threatBadge">THREAT LEVEL: --</div>
+        
+        <div class="result-title">System Analysis</div>
+        <div class="result-content" id="analysisText"></div>
+
+        <div class="result-title">Extracted Targets</div>
+        <div class="result-content" id="entitiesText"></div>
+
+        <div class="result-title">Recommended Action</div>
+        <div class="result-content" id="actionText" style="color: #38bdf8; font-weight: 500;"></div>
+
+        <div class="feedback-section" id="feedbackArea">
+            <div class="feedback-text">Did our AI misclassify this message?</div>
+            <button class="feedback-btn" onclick="submitFeedback()">⚠️ Report False Positive</button>
+        </div>
+    </div>
+</div>
+
+<div class="security-footer">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+    Engineered by <b>MercAttacker</b> | Protected by Enterprise Edge Gateway
+</div>
+
+<script>
+    let currentPayload = "";
+    let currentLevel = "";
+
+    async function analyzeText() {
+        const input = document.getElementById('scamInput').value.trim();
+        const btn = document.getElementById('analyzeBtn');
+        const results = document.getElementById('results');
+        const feedbackArea = document.getElementById('feedbackArea');
+
+        if (!input) return alert("Please enter a message to analyze.");
+
+        currentPayload = input;
+        results.style.display = "none";
+        btn.disabled = true;
+        btn.innerText = "Analyzing & Verifying CAPTCHA...";
+
+        try {
+            const response = await fetch('https://scamguard-agent-490204017472.asia-southeast1.run.app/api/analyze', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                // SECURITY: Sending the mock CAPTCHA token to the backend
+                body: JSON.stringify({ text: input, captchaToken: "hackathon-valid-token" })
+            });
+            
+            const data = await response.json();
+            currentLevel = data.threatLevel;
+            
+            document.getElementById('analysisText').innerText = data.analysis;
+            document.getElementById('actionText').innerText = data.recommendedAction;
+            
+            const entitiesContainer = document.getElementById('entitiesText');
+            entitiesContainer.innerHTML = '';
+            if (data.extractedEntities && data.extractedEntities[0] !== "None") {
+                data.extractedEntities.forEach(entity => { entitiesContainer.innerHTML += `<span class="entity-tag">${entity}</span>`; });
+            } else {
+                entitiesContainer.innerHTML = '<span style="color: #64748b; font-style: italic;">No specific entities detected</span>';
+            }
+
+            const level = (data.threatLevel || "LOW").toUpperCase();
+            const badge = document.getElementById('threatBadge');
+            badge.innerText = `THREAT LEVEL: ${level}`;
+            
+            results.className = ''; badge.className = 'badge';
+            if (level === 'CRITICAL') { results.classList.add('level-critical'); badge.classList.add('badge-critical'); }
+            else if (level === 'HIGH') { results.classList.add('level-high'); badge.classList.add('badge-high'); }
+            else if (level === 'MEDIUM') { results.classList.add('level-medium'); badge.classList.add('badge-medium'); }
+            else { results.classList.add('level-low'); badge.classList.add('badge-low'); }
+
+            // Reset feedback area
+            feedbackArea.innerHTML = `
+                <div class="feedback-text">Did our AI misclassify this message?</div>
+                <button class="feedback-btn" onclick="submitFeedback()">⚠️ Report False Positive</button>
+            `;
+            results.style.display = 'block';
+            
+        } catch (error) {
+            alert("Gateway Error. Please check connection.");
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "Initiate Secure Scan";
+        }
+    }
+
+    // THE FEEDBACK FUNCTION (Data Flywheel)
+    async function submitFeedback() {
+        const feedbackArea = document.getElementById('feedbackArea');
+        feedbackArea.innerHTML = `<span style="color: #0ea5e9; font-size: 0.9em;">Sending telemetry to Edge Node...</span>`;
+
+        try {
+            await fetch('https://scamguard-agent-490204017472.asia-southeast1.run.app/api/feedback', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: currentPayload, reportedLevel: currentLevel, userFeedback: "User marked as False Positive" })
+            });
+            feedbackArea.innerHTML = `<span style="color: #10b981; font-size: 0.9em; font-weight: bold;">✓ Thank you. Telemetry updated to improve our AI.</span>`;
+        } catch (error) {
+            feedbackArea.innerHTML = `<span style="color: #ef4444; font-size: 0.9em;">Failed to submit feedback.</span>`;
+        }
+    }
+</script>
+
+</body>
+</html>
