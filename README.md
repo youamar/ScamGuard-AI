@@ -1,10 +1,9 @@
-# ScamGuard by Team MercAttacker 🛡️
-> "Thinking like attackers to protect the citizens."
-
 # ScamGuard: The National Digital Shield 🛡️
-[![Project 2030](https://img.shields.io/badge/Project-2030-blue.svg)](https://example.com)
+> **Engineered by Team MercAttacker** | *"Thinking like attackers to protect the citizens."*
+
+[![Live Demo](https://img.shields.io/badge/Live_Demo-Online-success.svg)](https://scamguard-agent-490204017472.asia-southeast1.run.app)
+[![Project 2030](https://img.shields.io/badge/Hackathon-Project_2030-blue.svg)](#)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Google Cloud](https://img.shields.io/badge/Deployed-Google%20Cloud%20Run-4285F4?logo=google-cloud&logoColor=white)](https://cloud.google.com/)
 
 **ScamGuard** is an industrial-grade, dual-engine Threat Intelligence Gateway designed to protect citizens from AI-driven phishing and social engineering attacks. Developed for the **Project 2030: MyAI Future Hackathon**, it bridges the gap between complex enterprise security and everyday digital safety.
 
@@ -18,17 +17,17 @@ Traditional keyword filters are failing. Scammers now use Generative AI to craft
 * **Deep URL Unfurling**: Automatically resolves shortened links (Bit.ly, TinyURL) and cross-references Google Safe Browsing.
 * **Citizen Intelligence Portal**: A high-performance, HCI-optimized interface for instant threat verification.
 * **The Data Flywheel**: A built-in feedback loop that crowdsources False Positive reports to generate Zero-Day threat intelligence.
-* **Enterprise-Grade Performance**: Built-in Redis-style caching and rate-limiting to ensure sub-second latency and protection against DDoS.
+* **Enterprise-Grade Performance**: Built-in caching and rate-limiting to ensure sub-second latency and protection against DDoS.
 
 ---
 
 ## 🏗️ Technical Architecture
 ScamGuard is built on a **Stateless Resilience** model, optimized for cloud-native deployment.
 
-1.  **Ingress Layer**: Node.js/Express server protected by reCAPTCHA v3 and `express-rate-limit`.
-2.  **Logic Engine**: Deterministic regex-based normalization and scoring.
-3.  **Inference Layer**: Sandboxed Google Gemini Pro API for social engineering tactic explanation.
-4.  **Telemetry**: Asynchronous logging of threat patterns for future model fine-tuning.
+1. **Ingress Layer**: Node.js/Express server protected by simulated reCAPTCHA v3 and `express-rate-limit`.
+2. **Logic Engine**: Deterministic regex-based normalization and scoring.
+3. **Inference Layer**: Sandboxed Google Gemini Pro API for social engineering tactic explanation.
+4. **Telemetry**: Asynchronous logging of threat patterns for future model fine-tuning.
 
 ---
 
@@ -42,5 +41,5 @@ ScamGuard is built on a **Stateless Resilience** model, optimized for cloud-nati
 ### Local Development
 1. Clone the repository:
    ```bash
-   git clone [https://github.com/youamar/scamguard-ai.git](https://github.com/youamar/scamguard-ai.git)
-   cd scamguard-ai
+   git clone [https://github.com/youamar/ScamGuard-AI.git](https://github.com/youamar/ScamGuard-AI.git)
+   cd ScamGuard-AI
