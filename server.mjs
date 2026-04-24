@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
-import path from 'path'; // 🌟 新增：用于解析文件路径
+import path from 'path';
 
 const app = express();
 
@@ -16,15 +16,15 @@ app.use(cors());
 app.use(express.json());
 app.use('/api/', apiLimiter);
 
-// 🌟 新增：根目录路由，解决 "Cannot GET /" 的致命问题，直接返回你的极简 UI
+// 🌟 UI MOUNT: Resolves "Cannot GET /"
 app.get('/', (req, res) => {
     res.sendFile(path.resolve('index.html'));
 });
 
-const TRUSTED_DOMAINS = ["hasil.gov.my", "utm.my", "bnm.gov.my", "mcmc.gov.my"];
+const TRUSTED_DOMAINS = ["hasil.gov.my", "utm.my", "bnm.gov.my", "mcmc.gov.my", "youtube.com", "youtu.be", "github.com"];
 const API_KEY = process.env.GEMINI_API_KEY || "";
 
-// --- 2. MOCK DATABASE (For Hackathon Telemetry) ---
+// --- 2. TELEMETRY DATABASE (The Honeypot) ---
 const telemetryDatabase = [];
 
 function normalizeText(text) {
@@ -33,16 +33,13 @@ function normalizeText(text) {
 
 // --- 3. FEEDBACK LOOP API (The Data Flywheel) ---
 app.post('/api/feedback', (req, res) => {
-    const { text, reportedLevel, userFeedback } = req.body;
-    
-    // Log the user correction to our Honeypot/Telemetry DB
+    const { text, userFeedback } = req.body;
     telemetryDatabase.push({
         timestamp: new Date().toISOString(),
         type: "FALSE_POSITIVE_REPORT",
         payload: text,
         userCorrection: userFeedback
     });
-
     console.log(`\n🔄 [DATA FLYWHEEL] User reported misclassification. Telemetry updated.`);
     res.json({ status: "success", message: "Telemetry updated. Thank you for contributing to National Security." });
 });
@@ -51,11 +48,11 @@ app.post('/api/feedback', (req, res) => {
 app.post('/api/analyze', async (req, res) => {
     const { text, captchaToken } = req.body;
 
-    // 🛡️ FRONTEND SECURITY CHECK (reCAPTCHA v3 Simulation)
+    // 🛡️ FRONTEND SECURITY CHECK
     if (!captchaToken || captchaToken !== "hackathon-valid-token") {
         return res.status(403).json({ 
             threatLevel: "Critical", 
-            analysis: "SECURITY ALERT: Automated bot traffic detected. Missing or invalid CAPTCHA token.", 
+            analysis: "SECURITY ALERT: Automated bot traffic detected.", 
             extractedEntities: ["None"],
             recommendedAction: "Access Denied." 
         });
@@ -84,40 +81,44 @@ app.post('/api/analyze', async (req, res) => {
     else if (heuristicScore >= 60) strictLevel = "High";
     else if (heuristicScore >= 15) strictLevel = "Medium";
 
-    // AI EXPLAINER
-    const prompt = `You are a cybersecurity explainer. 
-    Threat Level: ${strictLevel}
-    Briefly explain the tactic in the text. Do NOT advise clicking links.
-    JSON Format: {"analysis": "Brief explanation", "recommendedAction": "Actionable advice"}
-    Text: ${text}`;
+    // 🌟 AI EXPLAINER (Gemini 1.5 Flash + JSON Schema)
+    const prompt = `You are an elite cybersecurity analyst. 
+    Threat Level is already determined as: ${strictLevel}
+    Explain the manipulation tactic used in the text. Be extremely concise. Do NOT advise clicking links.
+    Text to analyze: ${text}`;
 
     try {
-        if (!API_KEY) throw new Error("GEMINI_API_KEY is missing in environment variables.");
+        if (!API_KEY) throw new Error("GEMINI_API_KEY is missing.");
 
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`, {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+            body: JSON.stringify({ 
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "OBJECT",
+                        properties: {
+                            analysis: { type: "STRING" },
+                            recommendedAction: { type: "STRING" }
+                        },
+                        required: ["analysis", "recommendedAction"]
+                    }
+                }
+            })
         });
         
-        if (!response.ok) {
-            const errDetails = await response.text();
-            throw new Error(`Google API Rejected: ${response.status} - ${errDetails}`);
-        }
-
+        if (!response.ok) throw new Error(`Google API Rejected: ${response.status}`);
         const data = await response.json();
-        const cleanStr = data.candidates[0].content.parts[0].text.replace(/```json/g, '').replace(/```/g, '').trim();
-        const finalResult = JSON.parse(cleanStr);
+        const finalResult = JSON.parse(data.candidates[0].content.parts[0].text);
         
         finalResult.threatLevel = strictLevel;
         finalResult.extractedEntities = rawUrls.length > 0 ? rawUrls : ["None"];
         res.json(finalResult);
 
     } catch (error) {
-        // 🌟 新增：V9.1 深度容灾日志，确保即使 AI 宕机，控制台也能看到原因
-        console.error("\n⚠️ [SYSTEM ALERT] AI Node connection failed:");
-        console.error(error.message);
-        
+        console.error("\n⚠️ [SYSTEM ALERT] AI Node connection failed:", error.message);
         res.json({ 
             threatLevel: strictLevel, 
             extractedEntities: rawUrls.length > 0 ? rawUrls : ["None"], 
@@ -128,4 +129,4 @@ app.post('/api/analyze', async (req, res) => {
 });
 
 const PORT = parseInt(process.env.PORT) || 8080;
-app.listen(PORT, '0.0.0.0', () => console.log(`🚀 ScamGuard V9.1 Final Active on port: ${PORT}`));
+app.listen(PORT, '0.0.0.0', () => console.log(`🚀 ScamGuard V9.2 (Gemini 1.5 Engine) Active on port: ${PORT}`));
